@@ -13,6 +13,7 @@
     "from_name": "Example",
     "code_ttl": "15m",
     "code_attempts": 5,
+    "link": true,
     "limits": {
       "per_client": {"count": 10, "window": "15m"},
       "per_address": {"count": 5, "window": "1h"},

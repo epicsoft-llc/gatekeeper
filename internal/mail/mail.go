@@ -42,20 +42,22 @@ var (
 // Also written into templates/code.html.
 const logoID = "logo@gatekeeper"
 
-// To and Host come from the configuration, never from a request. The mail does not name the host - only the log does.
+// To and Host come from the configuration, never from a request. The mail names the host only in Link, with mail.link.
 type Code struct {
 	To   string
 	Host string
 	Lang string
 	Code string
 	TTL  time.Duration
+	Link string
 }
 
 type content struct {
 	Lang, Eyebrow, Heading, Code, Lead, Ignore string
+	Link, LinkButton, LinkHint                 string
 	Name, Owner, URL                           string
 	LogoWidth, LogoHeight                      int
-	Strong, Dark, Tint, Line                   string
+	Brand, OnBrand, Strong, Dark, Tint, Line   string
 }
 
 func Build(c Code, b *config.Branding, from, fromName string, now time.Time) ([]byte, error) {
@@ -80,10 +82,17 @@ func Build(c Code, b *config.Branding, from, fromName string, now time.Time) ([]
 		URL:        b.URL,
 		LogoWidth:  b.Logo.Width,
 		LogoHeight: b.Logo.Height,
+		Brand:      b.Palette.Brand,
+		OnBrand:    b.Palette.OnBrand,
 		Strong:     b.Palette.Strong,
 		Dark:       b.Palette.Dark,
 		Tint:       b.Palette.Tint,
 		Line:       b.Palette.Line,
+	}
+	if c.Link != "" {
+		data.Link = c.Link
+		data.LinkButton = b.Texts.T(c.Lang, "mail_link")
+		data.LinkHint = b.Texts.T(c.Lang, "mail_link_hint")
 	}
 	var text, html bytes.Buffer
 	if err := textTemplate.Execute(&text, data); err != nil {

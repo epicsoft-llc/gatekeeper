@@ -186,6 +186,72 @@ func TestCodeOnlyInTheBrowserThatAskedForIt(t *testing.T) {
 	}
 }
 
+func TestEmailLink(t *testing.T) {
+	h := newHarness(t, `"from_name": "Example"`, `"from_name": "Example", "link": true`)
+	b := h.browser("report.example.com")
+	page := b.request(http.MethodGet, prefix+"/sign_in", nil, "/reports/")
+	sent := b.post(prefix+"/email", url.Values{"csrf": {csrfOf(t, page.body)}, "rd": {"/reports/"}, "lang": {"en"}, "email": {"reader@example.org"}})
+	for _, c := range sent.Cookies() {
+		if c.Name == pendingCookie && c.SameSite != http.SameSiteLaxMode {
+			t.Errorf("pending cookie SameSite %v - a click in webmail would arrive without it", c.SameSite)
+		}
+	}
+	mailed := h.mailer.last(t)
+	link, err := url.Parse(mailed.Link)
+	if err != nil || link.Scheme != "https" || link.Host != "report.example.com" || link.Path != prefix+"/code" || link.Query().Get("rd") != "/reports/" || len(link.Query().Get("t")) != 26 {
+		t.Fatalf("link %q", mailed.Link)
+	}
+	if strings.Contains(h.log(), link.Query().Get("t")) {
+		t.Error("the token of the link reached the log")
+	}
+
+	other := h.browser("report.example.com")
+	if got := other.get(link.RequestURI()).location(t); got.Path != prefix+"/sign_in" || got.Query().Get("e") != "link" {
+		t.Errorf("the link in another browser: %s", got)
+	}
+	other.get(prefix+"/sign_in?rd=%2F&lang=en&e=link").expect(t, http.StatusUnauthorized, "only in the browser where the code was requested")
+
+	wrong := *link
+	query := wrong.Query()
+	query.Set("t", "AAAAAAAAAAAAAAAAAAAAAAAAAA")
+	wrong.RawQuery = query.Encode()
+	for i := 0; i < 6; i++ {
+		if got := b.get(wrong.RequestURI()).location(t); got.Path != prefix+"/code" || got.Query().Get("e") != "link" {
+			t.Fatalf("wrong token %d: %s", i+1, got)
+		}
+	}
+
+	if got := b.get(link.RequestURI()).location(t).String(); got != "/reports/" {
+		t.Fatalf("after the link: %s - wrong tokens must cost no attempt", got)
+	}
+	auth := b.request(http.MethodGet, prefix+"/auth", nil, "/reports/")
+	if auth.StatusCode != http.StatusAccepted || auth.Header.Get("X-Gatekeeper-User") != "reader@example.org" {
+		t.Fatalf("auth after the link: %d %q", auth.StatusCode, auth.Header.Get("X-Gatekeeper-User"))
+	}
+	if !strings.Contains(h.log(), `msg="signed in" host=report.example.com method=email user=reader@example.org by=link`) {
+		t.Errorf("log: %s", h.log())
+	}
+	if got := b.get(link.RequestURI()).location(t); got.Query().Get("e") != "link" {
+		t.Errorf("a used link: %s", got)
+	}
+}
+
+func TestNoLinkByDefault(t *testing.T) {
+	h := newHarness(t)
+	b := h.browser("report.example.com")
+	page := b.request(http.MethodGet, prefix+"/sign_in", nil, "/")
+	sent := b.post(prefix+"/email", url.Values{"csrf": {csrfOf(t, page.body)}, "rd": {"/"}, "lang": {"en"}, "email": {"reader@example.org"}})
+	for _, c := range sent.Cookies() {
+		if c.Name == pendingCookie && c.SameSite != http.SameSiteStrictMode {
+			t.Errorf("pending cookie SameSite %v without the link", c.SameSite)
+		}
+	}
+	if h.mailer.last(t).Link != "" {
+		t.Error("a link without mail.link")
+	}
+	b.get(prefix+"/code?rd=%2F&lang=en&t=AAAAAAAAAAAAAAAAAAAAAAAAAA").expect(t, http.StatusOK, `name="code"`)
+}
+
 func TestForms(t *testing.T) {
 	h := newHarness(t)
 	b := h.browser("report.example.com")

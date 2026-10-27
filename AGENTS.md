@@ -56,7 +56,7 @@ internal/i18n/      texts.json (de, en, ru, ka), Catalog with the overrides of a
 internal/mail/      code mail (text + HTML + inline logo), SMTP client, background queue (skips suppressed addresses);
                     templates/
 internal/server/    HTTP: request.go (host, client, return path), cookies.go (session, pending, flow, CSRF),
-                    codes.go (pending codes), handlers.go (auth, pages, email and code flow, sign-out),
+                    codes.go (pending codes, link tokens), handlers.go (auth, pages, email, code and link, sign-out),
                     oidc.go (providers), altcha.go (the ALTCHA step and its ticket), pages.go + templates/ (layout,
                     pages, style.css as a template of the colours), umami.go
 examples/           config.json and texts.json - loaded by a test, so they never drift from the code
@@ -76,13 +76,18 @@ docs/               screenshots/ of the README - take them anew when the pages c
 - **Codes are kept only as HMAC**, bound to the pending cookie (browser) and the host, void after use, expiry or
   `code_attempts`. A new code for the same address and host voids the old one - for an address without access too.
   A full store gives up its oldest entry instead of refusing everybody.
+- **The link of `mail.link` carries a token of its own**, never the code: kept as HMAC like the code, void with it,
+  unguessable - so a wrong token costs no attempt and a foreign page that sends the browser there cannot use up the
+  attempts. It signs in only the browser with the pending cookie; that cookie is `SameSite=Lax` with the link (a
+  click in webmail is cross-site), `Strict` without.
 - **An address without access is indistinguishable**: same redirect, same pending cookie, same code page, same limits
   (the per-address limit counts every entered address), and its older pending code is voided the same way - otherwise
   a second request and the first cookie would tell the two apart (found in the review of 2026-10-25). The only difference is that no mail goes out — and that
   happens in the background queue, so the answer takes the same time. Its address never reaches the log.
 - **Mail goes to the address as configured** (`config.NormalizeAddress` output; for a domain entry its exact domain
   and a local part from `localPattern`, no `%` or `!` routes), never to the raw input, and never
-  names the host - a mail in the wrong inbox must not reveal the protected site. `mail.Build`
+  names the host - a mail in the wrong inbox must not reveal the protected site; only `mail.link`, set by the
+  operator, puts it into the link. `mail.Build`
   refuses line breaks in header values. The SMTP client never falls back to plain text and sends credentials only
   over TLS.
 - **Providers:** state, nonce and PKCE are checked; the ID token only through go-oidc's verifier; `email_verified`

@@ -63,6 +63,7 @@ type Mail struct {
 	FromName     string     `json:"from_name"`
 	CodeTTL      Duration   `json:"code_ttl"`
 	CodeAttempts int        `json:"code_attempts"`
+	Link         bool       `json:"link"`
 	Limits       MailLimits `json:"limits"`
 	Bounces      *Bounces   `json:"bounces"`
 

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/rand"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -155,9 +156,9 @@ func TestForwardedHostTheProxyWrote(t *testing.T) {
 func TestCodeStore(t *testing.T) {
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	store := newCodeStore([]byte("key"), 10*time.Minute, 3, 3)
-	id, code := store.issue("a@example.com", "h.example.com", true, now)
-	if len(code) != 8 || !onlyDigits(code) || len(id) != 26 {
-		t.Fatalf("issue: %q %q", id, code)
+	id, code, link := store.issue("a@example.com", "h.example.com", true, now)
+	if len(code) != 8 || !onlyDigits(code) || len(id) != 26 || len(link) != 26 || link == id {
+		t.Fatalf("issue: %q %q %q", id, code, link)
 	}
 	if _, v := store.verify(id, "other.example.com", code, now); v != gone {
 		t.Error("a code worked on another host")
@@ -166,13 +167,16 @@ func TestCodeStore(t *testing.T) {
 		t.Errorf("verify: %q %v", email, v)
 	}
 
-	dummy, dummyCode := store.issue("stranger@example.com", "h.example.com", false, now)
+	dummy, dummyCode, dummyLink := store.issue("stranger@example.com", "h.example.com", false, now)
 	if _, v := store.verify(dummy, "h.example.com", dummyCode, now); v != wrong {
 		t.Error("a code for an address without access was accepted")
 	}
+	if _, v := store.follow(dummy, "h.example.com", dummyLink, now); v != wrong {
+		t.Error("a link for an address without access was accepted")
+	}
 
 	for _, allowed := range []bool{true, false} {
-		first, _ := store.issue("x@example.com", "h.example.com", allowed, now)
+		first, _, _ := store.issue("x@example.com", "h.example.com", allowed, now)
 		store.issue("x@example.com", "h.example.com", allowed, now)
 		if _, v := store.verify(first, "h.example.com", "00000000", now); v != gone {
 			t.Errorf("allowed=%v: the first code survived the second request (%v) - an oracle", allowed, v)
@@ -180,10 +184,10 @@ func TestCodeStore(t *testing.T) {
 	}
 
 	full := newCodeStore([]byte("key"), 10*time.Minute, 3, 3)
-	oldest, _ := full.issue("1@example.com", "h.example.com", false, now)
+	oldest, _, _ := full.issue("1@example.com", "h.example.com", false, now)
 	full.issue("2@example.com", "h.example.com", false, now.Add(time.Second))
 	full.issue("3@example.com", "h.example.com", false, now.Add(2*time.Second))
-	newest, newestCode := full.issue("b@example.com", "h.example.com", true, now.Add(3*time.Second))
+	newest, newestCode, _ := full.issue("b@example.com", "h.example.com", true, now.Add(3*time.Second))
 	if len(full.items) != 3 {
 		t.Errorf("%d items in a store of 3", len(full.items))
 	}
@@ -196,6 +200,42 @@ func TestCodeStore(t *testing.T) {
 
 	if string(store.mac("x", "12345678")) == string(store.mac("y", "12345678")) {
 		t.Error("the mac does not depend on the id")
+	}
+}
+
+func TestCodeStoreLink(t *testing.T) {
+	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	store := newCodeStore([]byte("key"), 10*time.Minute, 3, 3)
+	id, code, link := store.issue("a@example.com", "h.example.com", true, now)
+	for i := 0; i < 5; i++ {
+		if _, v := store.follow(id, "h.example.com", rand.Text(), now); v != wrong {
+			t.Fatalf("wrong link %d: %v", i+1, v)
+		}
+	}
+	if _, v := store.follow(id, "h.example.com", code, now); v != wrong {
+		t.Error("the code worked as the token of the link")
+	}
+	if _, v := store.follow(id, "other.example.com", link, now); v != gone {
+		t.Error("a link worked on another host")
+	}
+	if email, v := store.follow(id, "h.example.com", link, now); v != accepted || email != "a@example.com" {
+		t.Errorf("follow after wrong links: %q %v - they must cost no attempt", email, v)
+	}
+	if _, v := store.verify(id, "h.example.com", code, now); v != gone {
+		t.Error("the code still worked after the link")
+	}
+
+	id, code, link = store.issue("a@example.com", "h.example.com", true, now)
+	if _, v := store.verify(id, "h.example.com", code, now); v != accepted {
+		t.Fatal("verify")
+	}
+	if _, v := store.follow(id, "h.example.com", link, now); v != gone {
+		t.Error("the link still worked after the code")
+	}
+
+	id, _, link = store.issue("a@example.com", "h.example.com", true, now)
+	if _, v := store.follow(id, "h.example.com", link, now.Add(10*time.Minute)); v != gone {
+		t.Error("an expired link worked")
 	}
 }
 

@@ -36,6 +36,7 @@ type pendingCode struct {
 	who     string
 	host    string
 	mac     []byte
+	link    []byte
 	expires time.Time
 	tries   int
 }
@@ -45,7 +46,7 @@ func newCodeStore(key []byte, ttl time.Duration, attempts, maxItems int) *codeSt
 }
 
 // issue keeps the entry of an address without access in the same way; a full store gives up its oldest entry.
-func (s *codeStore) issue(address, host string, allowed bool, now time.Time) (id, code string) {
+func (s *codeStore) issue(address, host string, allowed bool, now time.Time) (id, code, link string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	who := hex.EncodeToString(s.mac("who", address+"|"+host))
@@ -67,13 +68,33 @@ func (s *codeStore) issue(address, host string, allowed bool, now time.Time) (id
 	if err != nil {
 		panic(err)
 	}
-	id, code = rand.Text(), fmt.Sprintf("%08d", number.Int64())
-	item := &pendingCode{who: who, host: host, mac: s.mac(id, code), expires: now.Add(s.ttl)}
+	id, code, link = rand.Text(), fmt.Sprintf("%08d", number.Int64()), rand.Text()
+	item := &pendingCode{who: who, host: host, mac: s.mac(id, code), link: s.mac(id, "link:"+link), expires: now.Add(s.ttl)}
 	if allowed {
 		item.email = address
 	}
 	s.items[id] = item
-	return id, code
+	return id, code, link
+}
+
+// follow takes the token of the link in the mail. It cannot be guessed, so a wrong one costs no attempt - a foreign
+// page that sends the browser to the link cannot use up the attempts of the code.
+func (s *codeStore) follow(id, host, link string, now time.Time) (string, verdict) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	item, ok := s.items[id]
+	if !ok || item.host != host {
+		return "", gone
+	}
+	if !now.Before(item.expires) {
+		delete(s.items, id)
+		return "", gone
+	}
+	if !hmac.Equal(s.mac(id, "link:"+link), item.link) || item.email == "" {
+		return "", wrong
+	}
+	delete(s.items, id)
+	return item.email, accepted
 }
 
 func (s *codeStore) verify(id, host, input string, now time.Time) (string, verdict) {

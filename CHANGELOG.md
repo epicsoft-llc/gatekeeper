@@ -13,6 +13,14 @@ the versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 **A release is a git tag `X.Y.Z`.** CI builds `X.Y.Z`, `X.Y`, `X` and moves `latest`; the `release` job fails
 without an entry below for the tag.
 
+## [1.1.0] - 2026-10-27
+
+### Added
+
+- `mail.link`: the code mail also carries a sign-in button. It signs in only the browser that asked for the code, by
+  a token of its own - not the code, so a wrong token costs no attempt. The mail then names the host; off by default.
+  With it the cookie of a pending code is `SameSite=Lax`, so a click in webmail carries it
+
 ## [1.0.0] - 2026-10-27
 
 The first public release.

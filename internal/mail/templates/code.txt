@@ -1,6 +1,11 @@
 {{.Heading}}
 
 {{.Code}}
+{{- if .Link}}
+
+{{.LinkButton}}: {{.Link}}
+{{.LinkHint}}
+{{- end}}
 
 {{.Lead}}
 

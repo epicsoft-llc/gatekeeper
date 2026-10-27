@@ -82,13 +82,13 @@ networks:
     external: true
 ```
 
-Pin a release (`X.Y.Z`). The image runs as uid `65532`; the secret files must be readable for it. Create the session secret with `openssl rand -base64 48`.
+The image runs as uid `65532`; the secret files must be readable for it. Create the session secret with `openssl rand -base64 48`.
 
 Check a configuration before a restart: `docker run --rm -v ./config.json:/etc/gatekeeper/config.json:ro … gatekeeper check` — it reads the secret files too and lists every problem at once.
 
 ## Configuration
 
-A JSON file; unknown keys are refused, so a typo stops the start instead of being ignored. A complete example: [`examples/config.json`](https://gitlab.com/epicsoft-networks/gatekeeper/-/blob/main/examples/config.json).
+A JSON file; an unknown key stops the start. A complete example: [`examples/config.json`](https://gitlab.com/epicsoft-networks/gatekeeper/-/blob/main/examples/config.json).
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -109,6 +109,7 @@ A JSON file; unknown keys are refused, so a typo stops the start instead of bein
 | `mail.username` / `password_file` | — | submission account |
 | `mail.from` / `from_name` | — | sender of the code mails |
 | `mail.code_ttl` / `code_attempts` | `15m` / `5` | lifetime of a code (whole minutes, 1–60) and wrong entries before it is void |
+| `mail.link` | `false` | a sign-in button in the code mail, see [Security](#security); the mail then names the host |
 | `mail.limits` | see example | `per_client` (code requests and ALTCHA checks per client address; a whole IPv6 /48 gets 16 times the count), `per_address` (per entered address), `total` (mails of the instance; addresses that get in only through a domain entry use at most half of it), `attempts` (code entries per client); each `{count, window}` |
 | `mail.bounces` | — | stops mail to an address whose code mail bounced, see [Bounces](#bounces). Needs `mail.username` |
 | `mail.bounces.imap_host` / `imap_port` | `mail.host` / `993` | IMAP with TLS from the first byte; the certificate must carry `mail.server_name` on `mail.host`, else `imap_host` |
@@ -149,8 +150,6 @@ Without `branding` the pages and the mail carry a neutral look: the name "Gateke
 | `colors` | `#04a9f3`, `#0270a8`, `#6fd0fb` | `brand` (buttons, focus), `brand_strong` (accents on light), `brand_dark` (accents in dark mode), each `#rrggbb`; the text on a button is ink or white, whichever reads better. The default mark keeps its blue |
 | `texts_file` | — | JSON like [`texts.json`](https://gitlab.com/epicsoft-networks/gatekeeper/-/blob/main/internal/i18n/texts.json): per language the texts to replace, see [`examples/texts.json`](https://gitlab.com/epicsoft-networks/gatekeeper/-/blob/main/examples/texts.json). Only keys that exist and the placeholders of the original; an unknown key stops the start |
 
-`gatekeeper check` reads and checks all files.
-
 ### ALTCHA
 
 With `altcha` the code by email starts with the [ALTCHA](https://altcha.org) widget of the ALTCHA service instead of the address field; the providers stay as they are. gatekeeper checks the solution at the service's `POST /verify` with its `site`, server to server, and the service spends it. Only then a sealed cookie opens the address field, once, for ten minutes, for the same client address and host.
@@ -158,7 +157,6 @@ With `altcha` the code by email starts with the [ALTCHA](https://altcha.org) wid
 - Create a site in the ALTCHA service whose origins are the protected hosts with code by email, and name it in `site`.
 - **Fail closed:** an unreachable service or a refusal means no code by email, with a message; the providers keep working.
 - Only this step has a script: its Content Security Policy admits exactly the widget, exactly the challenge and the widget's `blob:` workers; the widget's style gets a nonce. The service is trusted - a compromised one could run its own script here.
-- Without JavaScript the step cannot be passed; a note says so.
 - gatekeeper verifies for all visitors from one address, so `RATE_VERIFY_PER_IP` of the service is the ceiling of the step.
 
 ### Bounces
@@ -212,7 +210,7 @@ server {
 }
 ```
 
-`X-Forwarded-Uri $request_uri` is required: after `error_page` nginx no longer knows the query, the gatekeeper takes the way back from this header. `expires -1` makes the browser ask again after signing out. The visitor's address comes from the `X-Real-Ip` that Traefik in front of nginx sets; nginx passes it on unchanged.
+`X-Forwarded-Uri $request_uri` is required: after `error_page` nginx no longer knows the query, the gatekeeper takes the way back from this header. `expires -1` makes the browser ask again after signing out. The client address is the `X-Real-Ip` of a Traefik in front, passed on by nginx.
 
 ## Traefik
 
@@ -244,7 +242,7 @@ services:
 | `/_gatekeeper/denied` | GET | "signed in, no access" (status `403`) |
 | `/_gatekeeper/altcha` | POST | checks the ALTCHA solution and opens the address field |
 | `/_gatekeeper/email` | POST | requests a code |
-| `/_gatekeeper/code` | GET, POST | code entry |
+| `/_gatekeeper/code` | GET, POST | code entry; `GET` with `t`: the button of `mail.link` |
 | `/_gatekeeper/start/<id>` | GET | sends the visitor to provider `<id>` |
 | `/_gatekeeper/callback/<id>` | GET | return from the provider |
 | `/_gatekeeper/sign_out` | GET | a page with the sign-out button - link here from the protected site |
@@ -255,6 +253,7 @@ services:
 - **Fail closed.** An unknown host, a cookie that does not open, an expired flow or any provider error ends in the sign-in page or a refusal — never in access.
 - **Sessions** are AES-256-GCM encrypted cookies (`__Host-gatekeeper`, `Secure`, `HttpOnly`, `SameSite=Lax`), bound to the host they were issued for. Each cookie purpose has its own key, derived from `secret_file` with HKDF.
 - **Codes** are eight digits from `crypto/rand`, kept only as HMAC, bound to a cookie of the requesting browser and to the host, valid for `code_ttl`, void after `code_attempts` wrong entries or after use. A new code for the same address and host voids the previous one.
+- **The button of `mail.link`** signs in only the browser that asked for the code, by a token of its own, so a wrong one costs no attempt. The code's cookie is `SameSite=Lax` then, so a click in webmail carries it.
 - **No hints about addresses.** An address without access gets the same answer, the same cookie and the same code page as one with access; the per-address limit applies to every address. The mail goes out in the background, so the answer takes the same time.
 - **Mail** goes only to the normalized address - one of the configuration, or one at a domain entry's exact domain with a plain local part - never to the raw input. Addresses are plain ASCII, checked before lower case. Without STARTTLS (or with a certificate for another name) no password and no mail leave the service.
 - **Providers:** state, nonce and PKCE (S256); go-oidc checks signature, issuer, audience and expiry; the address must be marked verified, address and verification come from the same document; userinfo must belong to the same subject.
@@ -276,7 +275,7 @@ Decided on purpose:
 | | Content | Kept |
 |---|---|---|
 | Browser | session cookie (address, method, time of sign-in, the provider's ID token for the logout), cookies for a pending code, a provider sign-in, a solved ALTCHA and the CSRF token | session until `session` ends or sign-out, the others minutes to a day |
-| Memory | pending codes as HMAC with address and host, rate limit counters, spent ALTCHA tickets; with `mail.bounces` the token of every code mail with its address and the addresses that bounced | until expiry; tokens seven days, bounced addresses `suppress` |
+| Memory | pending codes and their link tokens as HMAC with address and host, rate limit counters, spent ALTCHA tickets; with `mail.bounces` the token of every code mail with its address and the addresses that bounced | until expiry; tokens seven days, bounced addresses `suppress` |
 | Mail | the code, sent to the address with access | not stored by the service |
 | Umami (optional) | sign-in page view and steps with host, path, referrer, browser language, client address and user agent | as kept by Umami |
 | Log | sign-ins and sign-outs with host, method and address; provider sign-ins without access with the address the provider verified; code requests with host (the address only if it has access); used-up codes, rate limits, mail, provider and ALTCHA errors; bounced and suppressed code mails with the address | as long as the container log is kept |
@@ -306,11 +305,9 @@ Client addresses, codes, tokens and cookies never reach the log.
 ```bash
 go test ./...                      # all tests, in-process, a few seconds
 go test -race ./...                # in Linux, as CI does
-go test -run '^$' -fuzz FuzzMark ./internal/brand/   # also FuzzParse, FuzzOpen, FuzzSafeReturn, FuzzNormalizeAddress
+go test -run '^$' -fuzz FuzzMark ./internal/brand/   # and the other Fuzz targets
 docker build -t gatekeeper:dev .
 ```
-
-Go is pinned in `.vfox.toml` for local work and in `Dockerfile` and `.gitlab-ci.yml` for the builds.
 
 ## Reporting problems
 

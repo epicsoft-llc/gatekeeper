@@ -23,6 +23,7 @@
     "error_address": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
     "error_code": "Der Code stimmt nicht. Bitte versuchen Sie es erneut.",
     "error_expired": "Der Code ist abgelaufen oder wurde zu oft falsch eingegeben. Bitte fordern Sie einen neuen an.",
+    "error_link": "Der Link aus der E-Mail gilt nur in dem Browser, in dem der Code angefordert wurde, und nur für den neuesten Code. Geben Sie den Code dort ein oder fordern Sie hier einen neuen an.",
     "error_limit": "Zu viele Versuche. Bitte warten Sie einige Minuten.",
     "error_form": "Die Seite ist abgelaufen. Bitte versuchen Sie es erneut.",
     "error_provider": "{name} ist gerade nicht erreichbar. Bitte versuchen Sie es später erneut oder wählen Sie einen anderen Weg.",
@@ -44,7 +45,9 @@
     "mail_subject": "Ihr Anmeldecode",
     "mail_heading": "Ihr Anmeldecode",
     "mail_lead": "Mit diesem Code melden Sie sich im geschützten Bereich an. Er ist {minutes} gültig und nur einmal verwendbar. Geben Sie ihn auf der geöffneten Anmeldeseite ein.",
-    "mail_ignore": "Sie haben keinen Code angefordert? Dann können Sie diese E-Mail ignorieren – ohne den Code ist keine Anmeldung möglich."
+    "mail_ignore": "Sie haben keinen Code angefordert? Dann können Sie diese E-Mail ignorieren – ohne den Code ist keine Anmeldung möglich.",
+    "mail_link": "Anmelden",
+    "mail_link_hint": "Der Knopf wirkt nur in dem Browser, in dem Sie den Code angefordert haben – sonst geben Sie den Code dort ein."
   },
   "en": {
     "name": "English",
@@ -70,6 +73,7 @@
     "error_address": "Please enter a valid email address.",
     "error_code": "The code is not correct. Please try again.",
     "error_expired": "The code has expired or was entered wrongly too often. Please request a new one.",
+    "error_link": "The link from the email works only in the browser where the code was requested, and only for the latest code. Enter the code there or request a new one here.",
     "error_limit": "Too many attempts. Please wait a few minutes.",
     "error_form": "The page has expired. Please try again.",
     "error_provider": "{name} cannot be reached right now. Please try again later or choose another way.",
@@ -91,7 +95,9 @@
     "mail_subject": "Your sign-in code",
     "mail_heading": "Your sign-in code",
     "mail_lead": "Use this code to sign in to the secure area. It is valid for {minutes} and can be used only once. Enter it on the open sign-in page.",
-    "mail_ignore": "Didn’t request a code? You can safely ignore this email – no one can sign in without it."
+    "mail_ignore": "Didn’t request a code? You can safely ignore this email – no one can sign in without it.",
+    "mail_link": "Sign in",
+    "mail_link_hint": "The button works only in the browser where you requested the code – otherwise enter the code there."
   },
   "ru": {
     "name": "Русский",
@@ -117,6 +123,7 @@
     "error_address": "Пожалуйста, введите корректный адрес электронной почты.",
     "error_code": "Неверный код. Пожалуйста, попробуйте ещё раз.",
     "error_expired": "Срок действия кода истёк, или код слишком часто вводили неверно. Пожалуйста, запросите новый.",
+    "error_link": "Ссылка из письма действует только в том браузере, в котором был запрошен код, и только для последнего кода. Введите код там или запросите здесь новый.",
     "error_limit": "Слишком много попыток. Пожалуйста, подождите несколько минут.",
     "error_form": "Срок действия страницы истёк. Пожалуйста, попробуйте ещё раз.",
     "error_provider": "{name} сейчас недоступен. Пожалуйста, повторите попытку позже или выберите другой способ.",
@@ -138,7 +145,9 @@
     "mail_subject": "Ваш код входа",
     "mail_heading": "Ваш код входа",
     "mail_lead": "С помощью этого кода вы войдёте в защищённую зону. Код действует {minutes} и может быть использован только один раз. Введите его на открытой странице входа.",
-    "mail_ignore": "Вы не запрашивали код? Тогда просто проигнорируйте это письмо — без кода войти невозможно."
+    "mail_ignore": "Вы не запрашивали код? Тогда просто проигнорируйте это письмо — без кода войти невозможно.",
+    "mail_link": "Войти",
+    "mail_link_hint": "Кнопка работает только в том браузере, в котором вы запросили код, — иначе введите код там."
   },
   "ka": {
     "name": "ქართული",
@@ -164,6 +173,7 @@
     "error_address": "გთხოვთ, შეიყვანოთ სწორი ელფოსტის მისამართი.",
     "error_code": "კოდი არასწორია. გთხოვთ, სცადოთ ხელახლა.",
     "error_expired": "კოდს ვადა გაუვიდა ან მცდელობების ლიმიტი ამოიწურა. გთხოვთ, მოითხოვოთ ახალი კოდი.",
+    "error_link": "წერილის ბმული მუშაობს მხოლოდ იმ ბრაუზერში, სადაც კოდი მოითხოვეს, და მხოლოდ უახლესი კოდისთვის. შეიყვანეთ კოდი იქ ან მოითხოვეთ ახალი აქ.",
     "error_limit": "ძალიან ბევრი მცდელობა. გთხოვთ, რამდენიმე წუთი მოიცადოთ.",
     "error_form": "გვერდს ვადა გაუვიდა. გთხოვთ, სცადოთ ხელახლა.",
     "error_provider": "{name} ამჟამად მიუწვდომელია. გთხოვთ, სცადოთ მოგვიანებით ან აირჩიოთ სხვა გზა.",
@@ -185,6 +195,8 @@
     "mail_subject": "თქვენი შესვლის კოდი",
     "mail_heading": "თქვენი შესვლის კოდი",
     "mail_lead": "ამ კოდით შეხვალთ დაცულ ზონაში. კოდი მოქმედებს {minutes} და გამოიყენება მხოლოდ ერთხელ. შეიყვანეთ ის გახსნილ შესვლის გვერდზე.",
-    "mail_ignore": "კოდი არ მოგითხოვიათ? მაშინ შეგიძლიათ ეს წერილი უგულებელყოთ — კოდის გარეშე შესვლა შეუძლებელია."
+    "mail_ignore": "კოდი არ მოგითხოვიათ? მაშინ შეგიძლიათ ეს წერილი უგულებელყოთ — კოდის გარეშე შესვლა შეუძლებელია.",
+    "mail_link": "შესვლა",
+    "mail_link_hint": "ღილაკი მუშაობს მხოლოდ იმ ბრაუზერში, სადაც კოდი მოითხოვეთ — სხვა შემთხვევაში შეიყვანეთ კოდი იქ."
   }
 }

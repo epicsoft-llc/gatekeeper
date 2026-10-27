@@ -12,7 +12,7 @@ import (
 	"gitlab.com/epicsoft-networks/gatekeeper/internal/mail"
 )
 
-var errorKeys = []string{"address", "code", "expired", "limit", "form"}
+var errorKeys = []string{"address", "code", "expired", "limit", "form", "link"}
 
 // auth answers nginx auth_request: only the status counts, nginx shows the page through error_page.
 func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
@@ -224,7 +224,14 @@ func (s *Server) email(w http.ResponseWriter, r *http.Request) {
 		clearCookie(w, ticketCookie)
 	}
 	allowed := s.cfg.Allowed(req.site, address)
-	id, code := s.codes.issue(address, req.host, allowed, now)
+	id, code, link := s.codes.issue(address, req.host, allowed, now)
+	mailed := mail.Code{To: address, Host: req.host, Lang: lang, Code: code, TTL: s.cfg.Mail.CodeTTL.D()}
+	// Lax with the link: a click in webmail comes from another site and would arrive without a strict cookie.
+	sameSite := http.SameSiteStrictMode
+	if s.cfg.Mail.Link {
+		mailed.Link = "https://" + req.host + gatekeeperURL("/code", rd, lang, "t", link)
+		sameSite = http.SameSiteLaxMode
+	}
 	switch {
 	case !allowed:
 		s.log.Info("code requested for an address without access", "host", req.host)
@@ -232,12 +239,12 @@ func (s *Server) email(w http.ResponseWriter, r *http.Request) {
 		s.log.Warn("rate limit", "limit", "domains", "host", req.host, "user", address)
 	case !s.total.Allow("all", now):
 		s.log.Warn("rate limit", "limit", "total", "host", req.host, "user", address)
-	case !s.mailer.Enqueue(mail.Code{To: address, Host: req.host, Lang: lang, Code: code, TTL: s.cfg.Mail.CodeTTL.D()}):
+	case !s.mailer.Enqueue(mailed):
 		s.log.Error("mail queue full", "host", req.host, "user", address)
 	default:
 		s.log.Info("code requested", "host", req.host, "user", address)
 	}
-	s.store(w, pendingCookie, s.pendings, "pending", req.host, pending{ID: id, Expires: now.Add(s.cfg.Mail.CodeTTL.D()).Unix()}, s.cfg.Mail.CodeTTL.D(), http.SameSiteStrictMode)
+	s.store(w, pendingCookie, s.pendings, "pending", req.host, pending{ID: id, Expires: now.Add(s.cfg.Mail.CodeTTL.D()).Unix()}, s.cfg.Mail.CodeTTL.D(), sameSite)
 	s.umami.event(r, req, rd, "gate-email", nil)
 	http.Redirect(w, r, gatekeeperURL("/code", rd, lang), http.StatusSeeOther)
 }
@@ -259,15 +266,43 @@ func (s *Server) codeForm(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	rd := safeReturn(query.Get("rd"))
 	lang := i18n.Negotiate(query.Get("lang"), r.Header.Get("Accept-Language"), s.cfg.Language)
+	if token := query.Get("t"); token != "" && s.cfg.Mail.Link {
+		s.follow(w, r, req, rd, lang, token)
+		return
+	}
 	if _, ok := s.readPending(r, req); !ok {
 		http.Redirect(w, r, gatekeeperURL("/sign_in", rd, lang, "e", "expired"), http.StatusSeeOther)
 		return
 	}
 	errorKey := query.Get("e")
-	if errorKey != "code" && errorKey != "limit" && errorKey != "form" {
+	if errorKey != "code" && errorKey != "limit" && errorKey != "form" && errorKey != "link" {
 		errorKey = ""
 	}
 	s.renderCode(w, r, req, http.StatusOK, rd, lang, errorKey)
+}
+
+// follow signs in by the link of the code mail - only the browser that holds the pending cookie of that code.
+func (s *Server) follow(w http.ResponseWriter, r *http.Request, req *request, rd, lang, token string) {
+	p, ok := s.readPending(r, req)
+	if !ok {
+		http.Redirect(w, r, gatekeeperURL("/sign_in", rd, lang, "e", "link"), http.StatusSeeOther)
+		return
+	}
+	now := s.now()
+	address, result := s.codes.follow(p.ID, req.host, token, now)
+	switch {
+	case result == accepted && s.cfg.Allowed(req.site, address):
+		clearCookie(w, pendingCookie)
+		s.writeSession(w, req, &session{Email: address, Method: config.EmailMethod, Issued: now.Unix()})
+		s.log.Info("signed in", "host", req.host, "method", config.EmailMethod, "user", address, "by", "link")
+		s.umami.event(r, req, rd, "gate-email-callback", nil)
+		http.Redirect(w, r, rd, http.StatusSeeOther)
+	case result == wrong:
+		http.Redirect(w, r, gatekeeperURL("/code", rd, lang, "e", "link"), http.StatusSeeOther)
+	default:
+		clearCookie(w, pendingCookie)
+		http.Redirect(w, r, gatekeeperURL("/sign_in", rd, lang, "e", "expired"), http.StatusSeeOther)
+	}
 }
 
 func (s *Server) renderCode(w http.ResponseWriter, r *http.Request, req *request, status int, rd, lang, errorKey string) {

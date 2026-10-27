@@ -15,7 +15,6 @@ import (
 	"math/big"
 	"mime"
 	"mime/multipart"
-	"mime/quotedprintable"
 	"net"
 	"net/mail"
 	"net/textproto"
@@ -117,6 +116,40 @@ func TestBuild(t *testing.T) {
 	}
 }
 
+func TestBuildWithLink(t *testing.T) {
+	texts := i18n.NewCatalog(nil)
+	link := "https://report.example.com/_gatekeeper/code?lang=de&rd=%2Freports%2F&t=ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	for _, lang := range i18n.Languages {
+		raw, err := Build(Code{To: "reader@example.org", Host: "report.example.com", Lang: lang, Code: "12345678", TTL: 10 * time.Minute, Link: link}, neutral(), "gate@example.com", "Example", now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		msg, err := mail.ReadMessage(bytes.NewReader(raw))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, params, _ := mime.ParseMediaType(msg.Header.Get("Content-Type"))
+		parts := multipart.NewReader(msg.Body, params["boundary"])
+		text := readPart(t, parts, "text/plain; charset=utf-8")
+		related, err := parts.NextPart()
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, relatedParams, _ := mime.ParseMediaType(related.Header.Get("Content-Type"))
+		html := readPart(t, multipart.NewReader(related, relatedParams["boundary"]), "text/html; charset=utf-8")
+		for _, want := range []string{link, texts.T(lang, "mail_link"), texts.T(lang, "mail_link_hint"), "1234 5678"} {
+			if !strings.Contains(text, want) {
+				t.Errorf("%s: text part lacks %q", lang, want)
+			}
+		}
+		for _, want := range []string{`href="` + strings.ReplaceAll(link, "&", "&amp;") + `"`, ">" + texts.T(lang, "mail_link") + "</a>", "background:#04a9f3"} {
+			if !strings.Contains(html, want) {
+				t.Errorf("%s: html part lacks %q", lang, want)
+			}
+		}
+	}
+}
+
 func readPart(t *testing.T, r *multipart.Reader, contentType string) string {
 	t.Helper()
 	part, err := r.NextPart()
@@ -126,7 +159,8 @@ func readPart(t *testing.T, r *multipart.Reader, contentType string) string {
 	if got := part.Header.Get("Content-Type"); got != contentType {
 		t.Fatalf("Content-Type %q, want %q", got, contentType)
 	}
-	body, err := io.ReadAll(quotedprintable.NewReader(part))
+	// The reader decodes quoted-printable itself; decoding again would turn "=de" of a link into a byte.
+	body, err := io.ReadAll(part)
 	if err != nil {
 		t.Fatal(err)
 	}
