@@ -27,9 +27,11 @@ test:
 
 #### The NVD data come from a central database of the maintainers; nothing about it is written here, and without the
 #### ESN_DEPCHECK_* variables (protected, so on main only) the job does not run. The database speaks the MySQL protocol,
-#### whose driver ships with the image like Go does. The Golang Mod Analyzer is experimental.
+#### whose driver ships with the image like Go does; only the runners tagged epicsoft reach it. The Golang Mod Analyzer
+#### is experimental.
 dependency-check:
   stage: test
+  tags: [ "epicsoft" ]
   image:
     name: owasp/dependency-check:latest
     entrypoint: [""]
