@@ -10,7 +10,7 @@ host.
 
 | | |
 |---|---|
-| **Repository** | `gitlab.com/epicsoft-networks/gatekeeper`, branch `develop` → `main` |
+| **Repository** | `gitlab.com/epicsoft-networks/gatekeeper`, branch `develop` → `main`; mirrored to `github.com/epicsoft-llc/gatekeeper` by a GitLab push mirror |
 | **Image** | `epicsoft/gatekeeper` on Docker Hub and `registry.gitlab.com/epicsoft-networks/gatekeeper`, `linux/amd64` and `linux/arm64` |
 | **Version** | the git tag `X.Y.Z`, built in through `-ldflags -X main.version` |
 | **Runtime** | Go 1.27 (`golang:1.27.3-alpine` to build, `scratch` to run); locally pinned in `.vfox.toml` |
@@ -130,6 +130,7 @@ Pipeline: `.gitlab-ci.yml`
 | `latest` | branch `main` | image `:latest` |
 | `release` | tag `X.Y.Z` | fails without a `CHANGELOG.md` entry for the tag; images `X.Y.Z`, `X.Y`, `X`, `latest` |
 | `uploadReadme` | branch `main` | `README.md` as the description on Docker Hub - fails above 25,000 bytes |
+| `github-release` | tag `X.Y.Z` | the GitHub release from the `CHANGELOG.md` entry, once the push mirror has brought the tag |
 
 The image jobs run `scripts/publish.sh`: an amd64 build into the runner's Docker, `scripts/smoke.sh` starts it with a
 throwaway configuration (health, version, uid, `check`, CA bundle, the status codes of the endpoints), and only then
