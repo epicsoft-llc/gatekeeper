@@ -1,0 +1,59 @@
+{
+  "secret_file": "/run/secrets/gatekeeper_secret",
+  "trusted_proxies": ["172.18.0.0/16"],
+  "default_language": "en",
+  "session": "24h",
+  "mail": {
+    "host": "mail.example.com",
+    "port": 587,
+    "tls": "starttls",
+    "username": "gate@example.com",
+    "password_file": "/run/secrets/gatekeeper_smtp_password",
+    "from": "gate@example.com",
+    "from_name": "Example",
+    "code_ttl": "15m",
+    "code_attempts": 5,
+    "limits": {
+      "per_client": {"count": 10, "window": "15m"},
+      "per_address": {"count": 5, "window": "1h"},
+      "total": {"count": 100, "window": "1h"},
+      "attempts": {"count": 20, "window": "15m"}
+    },
+    "bounces": {"imap_host": "mail.example.com", "imap_port": 993, "poll": "1m", "suppress": "48h", "delete_others": false}
+  },
+  "providers": [
+    {
+      "id": "zitadel",
+      "name": "Zitadel",
+      "icon": "zitadel",
+      "issuer": "https://example.zitadel.cloud",
+      "client_id": "123456789",
+      "client_secret_file": "/run/secrets/gatekeeper_zitadel_secret",
+      "logout": "backend",
+      "groups_claim": "gatekeeper:roles"
+    }
+  ],
+  "groups": {
+    "admins": ["admin@example.com"],
+    "report.example.com": ["reader@example.org", "@example.net"]
+  },
+  "hosts": {
+    "report.example.com": {"login": ["email", "zitadel"], "allow": ["report.example.com", "admins"]},
+    "staging.example.com": {"login": ["zitadel"], "allow": ["admins"], "session": "8h"}
+  },
+  "umami": {
+    "url": "http://umami:3000/api/send",
+    "website": "00000000-0000-0000-0000-000000000000",
+    "respect_opt_out": ["report.example.com"]
+  },
+  "altcha": {"url": "https://altcha.example.com", "site": "gatekeeper"},
+  "branding": {
+    "name": "Example",
+    "owner": "Example Ltd",
+    "url": "https://www.example.com",
+    "mark_file": "/etc/gatekeeper/brand/mark.svg",
+    "logo_file": "/etc/gatekeeper/brand/logo.png",
+    "colors": {"brand": "#04a9f3", "brand_strong": "#0270a8", "brand_dark": "#6fd0fb"},
+    "texts_file": "/etc/gatekeeper/brand/texts.json"
+  }
+}

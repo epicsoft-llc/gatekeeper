@@ -1,0 +1,23 @@
+{{define "content"}}<p class="lead">{{.Lead}}</p>
+<div class="actions">
+{{with .AltchaForm}}<form method="post" action="{{.Action}}">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<input type="hidden" name="rd" value="{{.Return}}">
+<input type="hidden" name="lang" value="{{.Lang}}">
+<altcha-widget challenge="{{.Challenge}}" language="{{.Lang}}" auto="onsubmit"></altcha-widget>
+<noscript><p class="noscript">{{.NoScript}}</p></noscript>
+<button class="btn btn--primary" type="submit">{{template "icon-mail"}}{{.Button}}</button>
+</form>
+{{end}}{{with .EmailForm}}<form method="post" action="{{.Action}}">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<input type="hidden" name="rd" value="{{.Return}}">
+<input type="hidden" name="lang" value="{{.Lang}}">
+<label for="email">{{.Label}}</label>
+<input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" required autofocus>
+<button class="btn btn--primary" type="submit">{{template "icon-mail"}}{{.Button}}</button>
+</form>
+{{end}}{{if .Or}}<p class="divider">{{.Or}}</p>
+{{end}}{{range .Providers}}<a class="btn {{if .Primary}}btn--primary{{else}}btn--ghost{{end}}" href="{{.Href}}">{{if eq .Icon "zitadel"}}{{template "icon-zitadel"}}{{else}}{{template "icon-key"}}{{end}}{{.Label}}</a>
+{{end}}</div>
+{{if .Hint}}<p class="hint">{{.Hint}}</p>
+{{end}}{{end}}

@@ -1,0 +1,6 @@
+# Whitelist: a new file stays out of the build context until it is named here.
+*
+!go.mod
+!go.sum
+!cmd
+!internal

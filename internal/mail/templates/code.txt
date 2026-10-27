@@ -1,0 +1,11 @@
+{{.Heading}}
+
+{{.Code}}
+
+{{.Lead}}
+
+{{.Ignore}}
+{{- if .Owner}}
+
+{{.Owner}}{{if .URL}} · {{.URL}}{{end}}
+{{- end}}

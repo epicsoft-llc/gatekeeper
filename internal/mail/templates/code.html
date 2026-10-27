@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>{{.Heading}}</title>
+<style>
+@media (prefers-color-scheme:dark){
+.card{background:#11263b !important}
+.ink{color:#ffffff !important}
+.text{color:#dce8f2 !important}
+.muted{color:#9db2c6 !important}
+.codebox{background:#0e3350 !important;border-color:#24476a !important}
+.code,.eyebrow{color:{{.Dark}} !important}
+.rule{border-color:#24476a !important}}
+@media (max-width:600px){
+.card{padding:28px 22px 22px !important}
+.code{font-size:30px !important;letter-spacing:4px !important}}
+</style>
+</head>
+<body style="margin:0;padding:0;background:#0b1b2b">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0b1b2b">{{.Heading}}: {{.Code}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0b1b2b" style="background-color:#0b1b2b;background-image:linear-gradient(135deg,#0b1b2b 0%,#1b3a56 100%)">
+<tr>
+<td align="center" style="padding:40px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px">
+<tr>
+<td class="card" bgcolor="#ffffff" style="background:#ffffff;border-radius:22px;padding:36px 32px 26px;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#122032">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td style="vertical-align:middle"><img src="cid:logo@gatekeeper" width="{{.LogoWidth}}" height="{{.LogoHeight}}" alt="" style="display:block;border:0;width:{{.LogoWidth}}px;height:{{.LogoHeight}}px"></td>
+<td class="ink" style="vertical-align:middle;padding-left:12px;font-size:20px;font-weight:700;letter-spacing:-0.2px;color:#0b1b2b">{{.Name}}</td>
+</tr>
+</table>
+<p class="eyebrow" style="margin:28px 0 0;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:{{.Strong}}">{{.Eyebrow}}</p>
+<h1 class="ink" style="margin:6px 0 22px;font-size:28px;line-height:1.2;letter-spacing:-0.4px;color:#0b1b2b">{{.Heading}}</h1>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td class="codebox" align="center" bgcolor="{{.Tint}}" style="padding:18px 12px;background:{{.Tint}};border:1px solid {{.Line}};border-radius:14px">
+<span class="code" style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:34px;font-weight:700;letter-spacing:6px;color:{{.Strong}}">{{.Code}}</span>
+</td>
+</tr>
+</table>
+<p class="text" style="margin:28px 0 0;font-size:15px;line-height:1.6;color:#122032">{{.Lead}}</p>
+<p class="muted rule" style="margin:24px 0 0;padding-top:18px;border-top:1px solid #dfe7ef;font-size:13px;line-height:1.55;color:#4f6275">{{.Ignore}}</p>
+</td>
+</tr>
+{{if .Owner}}<tr>
+<td align="center" style="padding:22px 0 0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:0.5px;color:#9db2c6">{{if .URL}}<a href="{{.URL}}" style="color:#9db2c6;text-decoration:none">{{.Owner}}</a>{{else}}{{.Owner}}{{end}}</td>
+</tr>
+{{end}}
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>

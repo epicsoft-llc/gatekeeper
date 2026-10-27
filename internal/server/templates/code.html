@@ -1,0 +1,12 @@
+{{define "content"}}<p class="lead">{{.Lead}}</p>
+{{with .CodeForm}}<form method="post" action="{{.Action}}">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<input type="hidden" name="rd" value="{{.Return}}">
+<input type="hidden" name="lang" value="{{.Lang}}">
+<label for="code">{{.Label}}</label>
+<input id="code" class="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{8,9}" maxlength="9" required autofocus>
+<button class="btn btn--primary" type="submit">{{.Button}}</button>
+</form>
+<p class="again"><a href="{{.AgainHref}}">{{.Again}}</a></p>
+{{end}}{{if .Hint}}<p class="hint">{{.Hint}}</p>
+{{end}}{{end}}

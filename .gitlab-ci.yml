@@ -1,0 +1,94 @@
+stages:
+  - test
+  - build
+  - release
+
+variables:
+  DOCKER_REGISTRY: "epicsoft/gatekeeper"
+  BUILD_PLATFORMS: "linux/amd64,linux/arm64"
+  BUILDX_NO_DEFAULT_ATTESTATIONS: "1"
+
+test:
+  stage: test
+  image: golang:1.27.3
+  variables:
+    GOPATH: "$CI_PROJECT_DIR/.go"
+    GOFLAGS: "-mod=readonly"
+  cache:
+    key: go
+    paths:
+      - .go/pkg/mod/
+  script:
+    - test -z "$(gofmt -l cmd internal)" || { gofmt -l cmd internal; exit 1; }
+    - go vet ./...
+    - go test -race ./...
+    - go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+    - go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+
+#### The tokens go in over stdin: '-p' would put them in the process list of the runner.
+.docker:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - |
+      quiet() { out=$("$@" 2>&1) || { echo "$out"; return 1; }; }
+      echo "$CI_JOB_TOKEN" | quiet docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
+      echo "$DOCKER_HUB_TOKEN" | quiet docker login -u "$DOCKER_HUB_USER" --password-stdin
+      quiet docker context create dind
+      quiet docker buildx create --name epicbuilder --driver docker-container --use dind
+  after_script:
+    - docker logout $CI_REGISTRY
+    - docker logout
+
+develop:
+  extends: .docker
+  variables:
+    DOCKER_REGISTRY: ""
+  script:
+    - sh scripts/publish.sh develop develop
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop" && $CI_PIPELINE_SOURCE != "schedule"
+
+latest:
+  extends: .docker
+  script:
+    - sh scripts/publish.sh latest latest
+  retry: 2
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"
+
+release:
+  extends: .docker
+  script:
+    - grep -q "^## \[${CI_COMMIT_TAG}\] - " CHANGELOG.md || { echo "CHANGELOG.md has no entry for ${CI_COMMIT_TAG}"; exit 1; }
+    - MAJOR_MINOR="${CI_COMMIT_TAG%.*}"
+    - sh scripts/publish.sh "$CI_COMMIT_TAG" "$CI_COMMIT_TAG" "$MAJOR_MINOR" "${MAJOR_MINOR%.*}" latest
+  retry: 1
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/
+
+uploadReadme:
+  stage: release
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - |
+      size=$(wc -c < README.md)
+      if [ "$size" -gt 25000 ]; then
+        echo "README.md has $size bytes, Docker Hub takes 25000"
+        exit 1
+      fi
+    #### '-e NAME' without a value takes it from the environment - '-e NAME=value' would put the token in the process list
+    - DOCKERHUB_PASSWORD="$DOCKER_HUB_TOKEN" docker run --rm -v $PWD:/workspace
+      -e DOCKERHUB_USERNAME=${DOCKER_HUB_USER}
+      -e DOCKERHUB_PASSWORD
+      -e DOCKERHUB_REPOSITORY=${DOCKER_REGISTRY}
+      -e SHORT_DESCRIPTION="Sign-in gate for websites behind nginx auth_request or Traefik forwardAuth"
+      -e README_FILEPATH='/workspace/README.md'
+        peterevans/dockerhub-description:4
+  retry: 2
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"

@@ -1,0 +1,10 @@
+{{define "content"}}<p class="lead">{{.Lead}}</p>
+<div class="actions">
+{{with .SignOut}}<form method="post" action="{{.Action}}">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<input type="hidden" name="lang" value="{{.Lang}}">
+<button class="btn btn--primary" type="submit">{{.Button}}</button>
+</form>
+{{end}}{{range .Actions}}<a class="btn {{if .Primary}}btn--primary{{else}}btn--ghost{{end}}" href="{{.Href}}">{{.Label}}</a>
+{{end}}</div>
+{{end}}

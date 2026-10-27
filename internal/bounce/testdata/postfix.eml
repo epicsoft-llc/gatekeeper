@@ -1,0 +1,69 @@
+Return-Path: <>
+X-Original-To: gate+b-abcdefghijklmnopqrstuvwxyz@example.test
+Delivered-To: gate+b-abcdefghijklmnopqrstuvwxyz@example.test
+Received: by mx.example.test (Postfix)
+	id 95FEA31EDF; Tue, 27 Oct 2026 09:24:53 +0000 (UTC)
+Date: Tue, 27 Oct 2026 09:24:53 +0000 (UTC)
+From: Mail Delivery System <MAILER-DAEMON@example.test>
+Subject: Undelivered Mail Returned to Sender
+To: gate+b-abcdefghijklmnopqrstuvwxyz@example.test
+Auto-Submitted: auto-replied
+MIME-Version: 1.0
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="91DE231EDC.1793093093/mx.example.test"
+Content-Transfer-Encoding: 8bit
+Message-Id: <20261027092453.95FEA31EDF@mx.example.test>
+
+This is a MIME-encapsulated message.
+
+--91DE231EDC.1793093093/mx.example.test
+Content-Description: Notification
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+This is the mail system at host mx.example.test.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<nobody-here@example.test>: unknown user: "nobody-here"
+
+--91DE231EDC.1793093093/mx.example.test
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; mx.example.test
+X-Postfix-Queue-ID: 91DE231EDC
+X-Postfix-Sender: rfc822; gate+b-abcdefghijklmnopqrstuvwxyz@example.test
+Arrival-Date: Tue, 27 Oct 2026 09:24:53 +0000 (UTC)
+
+Final-Recipient: rfc822; nobody-here@example.test
+Original-Recipient: rfc822;nobody-here@example.test
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Postfix; unknown user: "nobody-here"
+
+--91DE231EDC.1793093093/mx.example.test
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 8bit
+
+Return-Path: <gate+b-abcdefghijklmnopqrstuvwxyz@example.test>
+Received: by mx.example.test (Postfix, from userid 0)
+	id 91DE231EDC; Tue, 27 Oct 2026 09:24:53 +0000 (UTC)
+From: gate@example.test
+To: nobody-here@example.test
+Subject: Your sign-in code
+Message-Id: <1@example.test>
+Date: Tue, 27 Oct 2026 09:24:53 +0000 (UTC)
+
+The code
+
+--91DE231EDC.1793093093/mx.example.test--
