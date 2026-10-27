@@ -126,6 +126,7 @@ Pipeline: `.gitlab-ci.yml`
 | Job | Trigger | Action |
 |---|---|---|
 | `test` | every pipeline, also the weekly schedule | `gofmt`, `go vet`, `go test -race`, `staticcheck`, `govulncheck` in `golang:1.27.3` |
+| `dependency-check` | branch `main` with the `ESN_DEPCHECK_*` group variables, also the weekly schedule | OWASP Dependency-Check of `go.mod` against the maintainers' central NVD database (image `owasp/dependency-check` with its MySQL driver, experimental Golang Mod Analyzer); fails from CVSS 5; suppressions in `dependency-suppressions.xml`, set only by a human |
 | `develop` | branch `develop` | image `:develop`, GitLab registry only |
 | `latest` | branch `main` | image `:latest` |
 | `release` | tag `X.Y.Z` | fails without a `CHANGELOG.md` entry for the tag; images `X.Y.Z`, `X.Y`, `X`, `latest` |
@@ -138,13 +139,17 @@ buildx builds `linux/amd64` and `linux/arm64` and pushes to the GitLab registry 
 arm64 needs no emulation. Locally:
 `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/src" -w /src -e SMOKE_HOST=host.docker.internal docker:latest sh scripts/smoke.sh <image> <version>`.
 
-The **weekly schedule** (pipeline schedule on `main`, Monday 06:00 Asia/Tbilisi) runs only `test`: a new entry in the
-Go vulnerability database fails it without any commit. A red scheduled pipeline means: update and release.
+The **weekly schedule** (pipeline schedule on `main`, Sunday 02:35 Asia/Tbilisi) runs `test` and `dependency-check`: a
+new entry in the Go vulnerability database or the NVD fails it without any commit. A red scheduled pipeline means:
+update and release - or, for a false positive of Dependency-Check, a suppression by a human.
 
 The jobs log in with the job token and the group variables `DOCKER_HUB_USER` and `DOCKER_HUB_TOKEN`, over stdin.
 
-**Not in CI, deliberately:** OWASP Dependency-Check maps Go modules poorly; `govulncheck` reads the Go vulnerability
-database, covers the standard library and reports only code paths in use. `gosec` was evaluated with 2.30.0
+**Dependency-Check maps Go modules by guessed CPEs**, so it reports false positives: `cpe:/a:go:go` (the Go toolchain
+and its extension for Visual Studio Code) on a module version. `govulncheck` stays the check that reads the Go
+vulnerability database, covers the standard library and reports only code paths in use.
+
+**Not in CI, deliberately:** `gosec` was evaluated with 2.30.0
 (again on 2026-10-27 with branding, ALTCHA and bounces): its unhandled-error findings are fixed, the rest are false
 positives (G203 on the CSS of the checked colours, the favicon and the mark written anew from the allowlist, G304 on
 files named in the configuration, G710 on redirects that pass `safeReturn` or come from provider metadata, G124 on the
