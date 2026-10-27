@@ -6,7 +6,7 @@ A sign-in gate for websites behind a reverse proxy. Visitors sign in with a one-
 
 * Base image: `scratch` — a static Go binary built with `golang:1.27.3-alpine`, platforms `linux/amd64` and `linux/arm64`
 * Dockerfile: https://gitlab.com/epicsoft-networks/gatekeeper/-/blob/main/Dockerfile
-* Repository: https://gitlab.com/epicsoft-networks/gatekeeper
+* Repository: https://gitlab.com/epicsoft-networks/gatekeeper, mirrored to [GitHub](https://github.com/epicsoft-llc/gatekeeper) — issues are welcome on both; code changes only as merge requests on GitLab, the mirror cannot take pull requests
 * Container registry: https://gitlab.com/epicsoft-networks/gatekeeper/container_registry
 * Docker Hub: https://hub.docker.com/r/epicsoft/gatekeeper
 * Changelog: https://gitlab.com/epicsoft-networks/gatekeeper/-/blob/main/CHANGELOG.md
@@ -314,7 +314,7 @@ Go is pinned in `.vfox.toml` for local work and in `Dockerfile` and `.gitlab-ci.
 
 ## Reporting problems
 
-Issues go to [GitLab](https://gitlab.com/epicsoft-networks/gatekeeper/-/issues); a security problem as a **confidential issue**, see [`SECURITY.md`](https://gitlab.com/epicsoft-networks/gatekeeper/-/blob/main/SECURITY.md).
+Issues are welcome on [GitLab](https://gitlab.com/epicsoft-networks/gatekeeper/-/issues) and [GitHub](https://github.com/epicsoft-llc/gatekeeper/issues); a security problem as a **confidential issue** on GitLab, see [`SECURITY.md`](https://gitlab.com/epicsoft-networks/gatekeeper/-/blob/main/SECURITY.md).
 
 ## License
 
