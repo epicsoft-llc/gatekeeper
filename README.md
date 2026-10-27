@@ -35,11 +35,11 @@ A sign-in gate for websites behind a reverse proxy. Visitors sign in with a one-
 
 The sign-in page, light and dark - language and colour scheme follow the browser:
 
-<img src="https://gitlab.com/epicsoft-networks/gatekeeper/-/raw/main/docs/screenshots/sign-in.png" alt="Sign-in page, light" width="420"> <img src="https://gitlab.com/epicsoft-networks/gatekeeper/-/raw/main/docs/screenshots/sign-in-dark.png" alt="Sign-in page, dark" width="420">
+<img src="docs/screenshots/sign-in.png" alt="Sign-in page, light" width="420"> <img src="docs/screenshots/sign-in-dark.png" alt="Sign-in page, dark" width="420">
 
 With `altcha` the code by email starts with the widget, and the code mail:
 
-<img src="https://gitlab.com/epicsoft-networks/gatekeeper/-/raw/main/docs/screenshots/altcha.png" alt="The ALTCHA step before the address field" width="420"> <img src="https://gitlab.com/epicsoft-networks/gatekeeper/-/raw/main/docs/screenshots/mail.png" alt="Code mail" width="420">
+<img src="docs/screenshots/altcha.png" alt="The ALTCHA step before the address field" width="420"> <img src="docs/screenshots/mail.png" alt="Code mail" width="420">
 
 ## How it works
 

@@ -129,7 +129,7 @@ Pipeline: `.gitlab-ci.yml`
 | `develop` | branch `develop` | image `:develop`, GitLab registry only |
 | `latest` | branch `main` | image `:latest` |
 | `release` | tag `X.Y.Z` | fails without a `CHANGELOG.md` entry for the tag; images `X.Y.Z`, `X.Y`, `X`, `latest` |
-| `uploadReadme` | branch `main` | `README.md` as the description on Docker Hub - fails above 25,000 bytes |
+| `uploadReadme` | branch `main` | `README.md` as the description on Docker Hub, its relative image paths as GitLab URLs - fails above 25,000 bytes |
 | `github-release` | tag `X.Y.Z` | the GitHub release from the `CHANGELOG.md` entry, once the push mirror has brought the tag |
 
 The image jobs run `scripts/publish.sh`: an amd64 build into the runner's Docker, `scripts/smoke.sh` starts it with a

@@ -75,10 +75,12 @@ uploadReadme:
   services:
     - docker:dind
   script:
+    #### GitLab and GitHub show the screenshots from their own copy; Docker Hub needs URLs
+    - sed 's#src="docs/#src="https://gitlab.com/epicsoft-networks/gatekeeper/-/raw/main/docs/#g' README.md > README.dockerhub.md
     - |
-      size=$(wc -c < README.md)
+      size=$(wc -c < README.dockerhub.md)
       if [ "$size" -gt 25000 ]; then
-        echo "README.md has $size bytes, Docker Hub takes 25000"
+        echo "README.md has $size bytes for Docker Hub, which takes 25000"
         exit 1
       fi
     #### '-e NAME' without a value takes it from the environment - '-e NAME=value' would put the token in the process list
@@ -87,7 +89,7 @@ uploadReadme:
       -e DOCKERHUB_PASSWORD
       -e DOCKERHUB_REPOSITORY=${DOCKER_REGISTRY}
       -e SHORT_DESCRIPTION="Sign-in gate for websites behind nginx auth_request or Traefik forwardAuth"
-      -e README_FILEPATH='/workspace/README.md'
+      -e README_FILEPATH='/workspace/README.dockerhub.md'
         peterevans/dockerhub-description:4
   retry: 2
   rules:
