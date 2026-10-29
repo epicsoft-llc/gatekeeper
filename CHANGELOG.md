@@ -13,6 +13,12 @@ the versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 **A release is a git tag `X.Y.Z`.** CI builds `X.Y.Z`, `X.Y`, `X` and moves `latest`; the `release` job fails
 without an entry below for the tag.
 
+## [1.1.1] - 2026-10-29
+
+### Changed
+
+- The button of `mail.link` says what it does: "Sign in with link" instead of "Sign in", in all four languages
+
 ## [1.1.0] - 2026-10-27
 
 ### Added

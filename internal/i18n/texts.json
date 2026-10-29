@@ -46,7 +46,7 @@
     "mail_heading": "Ihr Anmeldecode",
     "mail_lead": "Mit diesem Code melden Sie sich im geschützten Bereich an. Er ist {minutes} gültig und nur einmal verwendbar. Geben Sie ihn auf der geöffneten Anmeldeseite ein.",
     "mail_ignore": "Sie haben keinen Code angefordert? Dann können Sie diese E-Mail ignorieren – ohne den Code ist keine Anmeldung möglich.",
-    "mail_link": "Anmelden",
+    "mail_link": "Mit Link anmelden",
     "mail_link_hint": "Der Knopf wirkt nur in dem Browser, in dem Sie den Code angefordert haben – sonst geben Sie den Code dort ein."
   },
   "en": {
@@ -96,7 +96,7 @@
     "mail_heading": "Your sign-in code",
     "mail_lead": "Use this code to sign in to the secure area. It is valid for {minutes} and can be used only once. Enter it on the open sign-in page.",
     "mail_ignore": "Didn’t request a code? You can safely ignore this email – no one can sign in without it.",
-    "mail_link": "Sign in",
+    "mail_link": "Sign in with link",
     "mail_link_hint": "The button works only in the browser where you requested the code – otherwise enter the code there."
   },
   "ru": {
@@ -146,7 +146,7 @@
     "mail_heading": "Ваш код входа",
     "mail_lead": "С помощью этого кода вы войдёте в защищённую зону. Код действует {minutes} и может быть использован только один раз. Введите его на открытой странице входа.",
     "mail_ignore": "Вы не запрашивали код? Тогда просто проигнорируйте это письмо — без кода войти невозможно.",
-    "mail_link": "Войти",
+    "mail_link": "Войти по ссылке",
     "mail_link_hint": "Кнопка работает только в том браузере, в котором вы запросили код, — иначе введите код там."
   },
   "ka": {
@@ -196,7 +196,7 @@
     "mail_heading": "თქვენი შესვლის კოდი",
     "mail_lead": "ამ კოდით შეხვალთ დაცულ ზონაში. კოდი მოქმედებს {minutes} და გამოიყენება მხოლოდ ერთხელ. შეიყვანეთ ის გახსნილ შესვლის გვერდზე.",
     "mail_ignore": "კოდი არ მოგითხოვიათ? მაშინ შეგიძლიათ ეს წერილი უგულებელყოთ — კოდის გარეშე შესვლა შეუძლებელია.",
-    "mail_link": "შესვლა",
+    "mail_link": "შესვლა ბმულით",
     "mail_link_hint": "ღილაკი მუშაობს მხოლოდ იმ ბრაუზერში, სადაც კოდი მოითხოვეთ — სხვა შემთხვევაში შეიყვანეთ კოდი იქ."
   }
 }
