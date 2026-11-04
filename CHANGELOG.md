@@ -13,6 +13,15 @@ the versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 **A release is a git tag `X.Y.Z`.** CI builds `X.Y.Z`, `X.Y`, `X` and moves `latest`; the `release` job fails
 without an entry below for the tag.
 
+## [1.1.2] - 2026-11-03
+
+### Security
+
+- `github.com/go-jose/go-jose/v4` `4.1.8` (was `4.1.4`). It fixes three advisories that affect `4.1.4`:
+  GHSA-mgcc-cww5-fp2q (high: denial of service when parsing a key set with RSA keys), GHSA-vvm8-gf78-28g4 and
+  GHSA-4w3g-jfj2-cw2q (medium: panics in JSON parsing and in CBC-HMAC processing). Since go-jose `4.1.6` an RSA key in
+  a provider's key set may have at most 4096 bits - a common provider uses 2048 or 4096
+
 ## [1.1.1] - 2026-10-29
 
 ### Changed
