@@ -6,7 +6,7 @@ A sign-in gate for websites behind a reverse proxy. Visitors sign in with a one-
 
 * Base image: `scratch` — a static Go binary built with `golang:1.27.4-alpine`, platforms `linux/amd64` and `linux/arm64`
 * Dockerfile: https://gitlab.com/epicsoft-networks/gatekeeper/-/blob/main/Dockerfile
-* Repository: https://gitlab.com/epicsoft-networks/gatekeeper, mirrored to [GitHub](https://github.com/epicsoft-llc/gatekeeper) — issues are welcome on both; code changes only as merge requests on GitLab, the mirror cannot take pull requests
+* Repository: https://gitlab.com/epicsoft-networks/gatekeeper, mirrored to [GitHub](https://github.com/epicsoft-llc/gatekeeper) — code changes only as merge requests on GitLab, the mirror cannot take pull requests
 * Container registry: https://gitlab.com/epicsoft-networks/gatekeeper/container_registry
 * Docker Hub: https://hub.docker.com/r/epicsoft/gatekeeper
 * Changelog: https://gitlab.com/epicsoft-networks/gatekeeper/-/blob/main/CHANGELOG.md
@@ -26,6 +26,7 @@ A sign-in gate for websites behind a reverse proxy. Visitors sign in with a one-
 - **Branding** in the configuration: name, footer link, mark, mail logo, colours and any text - without it a neutral look
 - Optional **ALTCHA** proof of work before the code by email, checked at the [ALTCHA service](https://gitlab.com/epicsoft-networks/altcha): a bot never sees the address field
 - Optional **bounce handling**: no code mail for 48 hours to an address whose code mail bounced
+- **IP lists**: addresses and networks let in without signing in, or kept out — IPv4 and IPv6
 - Access is checked on every request against the current configuration — removing an address or a sign-in method locks out at once
 - No database and no volume: sessions are encrypted cookies, pending codes and rate limits live in memory, users and groups come from the configuration
 - Optional counting of the sign-in page and its steps in [Umami](https://umami.is), respecting Do Not Track and GPC per host
@@ -99,7 +100,8 @@ A JSON file; an unknown key stops the start. A complete example: [`examples/conf
 | `session` | `24h` | lifetime of a session, `5m` to `720h` |
 | `listen` / `health_listen` | `:8080` / `127.0.0.1:8081` | addresses of the two listeners |
 | `groups` | — | group name → list of addresses, lower case, or whole domains as `@example.com` (exactly that domain, not its subdomains; local parts of letters, digits, `.`, `_`, `+`, `-` only). They decide for the code by email and for providers without `groups_claim` |
-| `hosts` | — | host name → `login` (methods in the order of the page: `email` or provider ids), `allow` (group names), optional `session`. The entry `*` applies to every host without one; without it an unknown host is refused |
+| `hosts` | — | host name → `login` (methods in the order of the page: `email` or provider ids), `allow` (group names), optional `session`, `ip_allow` and `ip_deny`. The entry `*` applies to every host without one; without it an unknown host is refused |
+| `ip_allow` / `ip_deny` | — | addresses and networks, IPv4 and IPv6 (`203.0.113.7`, `2001:db8::/48`), for every host or in a host entry. `ip_allow` lets a client in without signing in and without `X-Gatekeeper-User`; `ip_deny` gives it `403` on every path, sign-in and code mail included, and wins. `/0` is refused in `ip_allow`; without a client address from the proxy neither list applies |
 | `providers[]` | — | `id`, `name` (on the button), `icon` (`zitadel` or empty), `issuer` (https), `client_id`, `client_secret_file` (empty for a public client with PKCE), `scopes` (default `openid email profile`), `logout`, `groups_claim` |
 | `providers[].groups_claim` | empty | claim with the groups of the account at the provider — a list of names, one name, or an object keyed by name (the role claims of Zitadel). With it, the provider's groups decide against the host's `allow`, not the addresses in `groups`, and `allow` may name groups that only the provider knows |
 | `providers[].logout` | empty | `backend` ends the provider session with a server-side call, `browser` sends the visitor to the provider's end-session page, empty ends only the gatekeeper session |
@@ -123,23 +125,11 @@ Client addresses are limited per IPv4 address and per IPv6 /64. The configuratio
 
 ### Trusted proxies
 
-Whatever is in `trusted_proxies` can choose the host and the client address of a request. Keep it narrow: the proxy container, or the Docker network gatekeeper shares with the proxy (`docker network inspect <network>` shows its subnet). Of `X-Forwarded-Host`, `X-Forwarded-Uri` and `client_ip_header` gatekeeper takes what the nearest proxy wrote, the last entry of the last line. A request whose `Host` names one configured host and whose `X-Forwarded-Host` another is refused - a proxy that passes the client's `X-Forwarded-Host` through would otherwise let a session of one host open another.
+Whatever is in `trusted_proxies` can choose the host and the client address of a request - with `ip_allow` its way in, too. Keep it narrow: the proxy container, or the Docker network gatekeeper shares with the proxy (`docker network inspect <network>` shows its subnet). Of `X-Forwarded-Host`, `X-Forwarded-Uri` and `client_ip_header` gatekeeper takes what the nearest proxy wrote, the last entry of the last line. A request whose `Host` names one configured host and whose `X-Forwarded-Host` another is refused - a proxy that passes the client's `X-Forwarded-Host` through would otherwise let a session of one host open another.
 
 ### Branding
 
 Without `branding` the pages and the mail carry a neutral look: the name "Gatekeeper", a shield on a blue square, no footer line. A mark of `mark_file` also lies large and faint behind the page.
-
-```json
-"branding": {
-  "name": "Example",
-  "owner": "Example Ltd",
-  "url": "https://www.example.com",
-  "mark_file": "/etc/gatekeeper/brand/mark.svg",
-  "logo_file": "/etc/gatekeeper/brand/logo.png",
-  "colors": {"brand": "#04a9f3", "brand_strong": "#0270a8", "brand_dark": "#6fd0fb"},
-  "texts_file": "/etc/gatekeeper/brand/texts.json"
-}
-```
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -236,7 +226,7 @@ services:
 
 | Path | Method | Purpose |
 |---|---|---|
-| `/_gatekeeper/auth` | any | for nginx `auth_request`: `202` with `X-Gatekeeper-User`, `401` without session, `403` without access or for an unknown host |
+| `/_gatekeeper/auth` | any | for nginx `auth_request`: `202` with `X-Gatekeeper-User` (without for `ip_allow`), `401` without session, `403` without access, for an unknown host or `ip_deny` |
 | `/_gatekeeper/forward_auth` | any | for Traefik `forwardAuth`: `200` with `X-Gatekeeper-User`, otherwise `401`/`403` with the page |
 | `/_gatekeeper/sign_in` | GET | sign-in page (status `401`) |
 | `/_gatekeeper/denied` | GET | "signed in, no access" (status `403`) |
@@ -299,15 +289,6 @@ Client addresses, codes, tokens and cookies never reach the log.
 | `X.Y`, `X` | the newest release of that line |
 | `latest` | branch `main` and the newest release |
 | `develop` | branch `develop`, GitLab registry only |
-
-## Development
-
-```bash
-go test ./...                      # all tests, in-process, a few seconds
-go test -race ./...                # in Linux, as CI does
-go test -run '^$' -fuzz FuzzMark ./internal/brand/   # and the other Fuzz targets
-docker build -t gatekeeper:dev .
-```
 
 ## Reporting problems
 

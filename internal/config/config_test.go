@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -159,6 +160,43 @@ func TestDomainEntry(t *testing.T) {
 	}
 }
 
+func TestIPLists(t *testing.T) {
+	cfg, err := load(t,
+		`"default_language": "de",`, `"default_language": "de", "ip_allow": ["192.0.2.10", "2001:db8:1::/48"], "ip_deny": ["192.0.2.66", "2001:db8:1:bad::/64"],`,
+		`"allow": ["report.example.com", "all"]}`, `"allow": ["report.example.com", "all"], "ip_allow": ["198.51.100.0/24", "::ffff:203.0.113.5"], "ip_deny": ["198.51.100.99"]}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	report, _ := cfg.HostConfig("report.example.com")
+	other, _ := cfg.HostConfig("other.example.com")
+	cases := []struct {
+		host        *Host
+		addr        string
+		allow, deny bool
+	}{
+		{report, "192.0.2.10", true, false},
+		{other, "192.0.2.10", true, false},
+		{report, "2001:db8:1:2::7", true, false},
+		{report, "198.51.100.42", true, false},
+		{other, "198.51.100.42", false, false},
+		{report, "203.0.113.5", true, false},
+		// A denied address inside an allowed network stays out.
+		{report, "198.51.100.99", false, true},
+		{report, "2001:db8:1:bad::1", false, true},
+		{other, "192.0.2.66", false, true},
+		{report, "192.0.2.11", false, false},
+	}
+	for _, c := range cases {
+		addr := netip.MustParseAddr(c.addr)
+		if got := cfg.AllowedIP(c.host, addr); got != c.allow {
+			t.Errorf("AllowedIP(%v, %s) = %v", c.host.Allow, c.addr, got)
+		}
+		if got := cfg.DeniedIP(c.host, addr); got != c.deny {
+			t.Errorf("DeniedIP(%v, %s) = %v", c.host.Allow, c.addr, got)
+		}
+	}
+}
+
 func TestUnknownHostWithoutFallback(t *testing.T) {
 	cfg, err := load(t, `,
     "*": {"login": ["zitadel"], "allow": ["all"], "session": "1h"}`, "")
@@ -183,6 +221,11 @@ func TestProblems(t *testing.T) {
 		{"every IPv4 address", []string{`"10.0.0.1"`, `"0.0.0.0/0"`}, `"0.0.0.0/0" trusts every address`},
 		{"every IPv6 address", []string{`"10.0.0.1"`, `"::/0"`}, `"::/0" trusts every address`},
 		{"bad header", []string{`"default_language": "de",`, `"default_language": "de", "client_ip_header": "X Real",`}, "client_ip_header"},
+		{"bad ip", []string{`"default_language": "de",`, `"default_language": "de", "ip_deny": ["192.0.2.300"],`}, `ip_deny: "192.0.2.300" is neither`},
+		{"ip with zone", []string{`"default_language": "de",`, `"default_language": "de", "ip_allow": ["fe80::1%eth0"],`}, `ip_allow: "fe80::1%eth0" is neither`},
+		{"ipv4 in ipv6", []string{`"default_language": "de",`, `"default_language": "de", "ip_deny": ["::ffff:192.0.2.0/120"],`}, "write it as IPv4"},
+		{"allow every IPv4 address", []string{`"default_language": "de",`, `"default_language": "de", "ip_allow": ["0.0.0.0/0"],`}, `ip_allow: "0.0.0.0/0" would let every address in`},
+		{"allow every IPv6 address", []string{`"allow": ["report.example.com", "all"]}`, `"allow": ["report.example.com", "all"], "ip_allow": ["::/0"]}`}, `hosts.report.example.com.ip_allow: "::/0" would let`},
 		{"language", []string{`"default_language": "de"`, `"default_language": "fr"`}, "default_language"},
 		{"session", []string{`"session": "1h"`, `"session": "1m"`}, "hosts.*.session"},
 		{"upper case host", []string{`"report.example.com": {"login"`, `"Report.example.com": {"login"`}, "not a lower case host name"},

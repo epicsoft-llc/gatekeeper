@@ -35,6 +35,8 @@ type Config struct {
 	Providers      []Provider          `json:"providers"`
 	Groups         map[string][]string `json:"groups"`
 	Hosts          map[string]*Host    `json:"hosts"`
+	IPAllow        []string            `json:"ip_allow"`
+	IPDeny         []string            `json:"ip_deny"`
 	Umami          *Umami              `json:"umami"`
 	Altcha         *Altcha             `json:"altcha"`
 	Branding       Branding            `json:"branding"`
@@ -42,14 +44,21 @@ type Config struct {
 	Secret  []byte         `json:"-"`
 	Proxies []netip.Prefix `json:"-"`
 
-	members map[string]map[string]bool
-	domains map[string]map[string]bool
+	members   map[string]map[string]bool
+	domains   map[string]map[string]bool
+	allowNets []netip.Prefix
+	denyNets  []netip.Prefix
 }
 
 type Host struct {
 	Login   []string `json:"login"`
 	Allow   []string `json:"allow"`
 	Session Duration `json:"session"`
+	IPAllow []string `json:"ip_allow"`
+	IPDeny  []string `json:"ip_deny"`
+
+	allowNets []netip.Prefix
+	denyNets  []netip.Prefix
 }
 
 type Mail struct {
@@ -323,6 +332,8 @@ func (c *Config) check() error {
 		}
 		c.Proxies = append(c.Proxies, prefix)
 	}
+	c.allowNets = networks(&p, "ip_allow", c.IPAllow, true)
+	c.denyNets = networks(&p, "ip_deny", c.IPDeny, false)
 	if !headerPattern.MatchString(c.ClientIPHeader) {
 		p.add("client_ip_header %q is not a header name", c.ClientIPHeader)
 	}
@@ -411,6 +422,8 @@ func (c *Config) check() error {
 		if host.Session != 0 {
 			checkSession(&p, "hosts."+name+".session", host.Session)
 		}
+		host.allowNets = networks(&p, "hosts."+name+".ip_allow", host.IPAllow, true)
+		host.denyNets = networks(&p, "hosts."+name+".ip_deny", host.IPDeny, false)
 	}
 
 	if usesEmail && c.Mail == nil {
@@ -678,6 +691,25 @@ func parsePrefix(entry string) (netip.Prefix, error) {
 	return netip.PrefixFrom(addr.Unmap(), addr.Unmap().BitLen()), nil
 }
 
+// networks reads ip_allow or ip_deny: addresses and networks, IPv4 and IPv6.
+func networks(p *problems, name string, entries []string, allow bool) []netip.Prefix {
+	var nets []netip.Prefix
+	for _, entry := range entries {
+		prefix, err := parsePrefix(entry)
+		switch {
+		case err != nil || strings.Contains(entry, "%"):
+			p.add("%s: %q is neither an address nor a network", name, entry)
+		case prefix.Addr().Is4In6():
+			p.add("%s: %q is an IPv4 network in IPv6 notation - write it as IPv4", name, entry)
+		case allow && prefix.Bits() == 0:
+			p.add("%s: %q would let every address in without signing in", name, entry)
+		default:
+			nets = append(nets, prefix)
+		}
+	}
+	return nets
+}
+
 func hasControl(s string) bool {
 	for _, r := range s {
 		if r < 0x20 || r == 0x7f {
@@ -750,6 +782,20 @@ func domainOf(address string) string {
 		return ""
 	}
 	return address[at+1:]
+}
+
+// DeniedIP takes the client address, unmapped and without zone: ip_deny of the top level or of the host.
+func (c *Config) DeniedIP(h *Host, addr netip.Addr) bool {
+	return listed(c.denyNets, addr) || listed(h.denyNets, addr)
+}
+
+// AllowedIP is ip_allow of the top level or of the host - never for an address in ip_deny.
+func (c *Config) AllowedIP(h *Host, addr netip.Addr) bool {
+	return !c.DeniedIP(h, addr) && (listed(c.allowNets, addr) || listed(h.allowNets, addr))
+}
+
+func listed(nets []netip.Prefix, addr netip.Addr) bool {
+	return slices.ContainsFunc(nets, func(n netip.Prefix) bool { return n.Contains(addr) })
 }
 
 // AllowedGroups is the decision for a provider with groups_claim: one of its groups must be allowed on the host.

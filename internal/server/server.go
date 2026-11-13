@@ -122,7 +122,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET "+prefix+"/sign_out", s.signOutPage)
 	mux.Handle("POST "+prefix+"/sign_out", s.origins.Handler(http.HandlerFunc(s.signOut)))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { http.NotFound(w, r) })
-	return securityHeaders(http.MaxBytesHandler(mux, 16<<10))
+	return securityHeaders(http.MaxBytesHandler(s.refuseDenied(mux), 16<<10))
 }
 
 func securityHeaders(next http.Handler) http.Handler {

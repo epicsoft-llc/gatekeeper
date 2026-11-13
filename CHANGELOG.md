@@ -13,6 +13,20 @@ the versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 **A release is a git tag `X.Y.Z`.** CI builds `X.Y.Z`, `X.Y`, `X` and moves `latest`; the `release` job fails
 without an entry below for the tag.
 
+## [1.2.0] - 2026-11-13
+
+### Added
+
+- `ip_allow` and `ip_deny`: addresses and networks, IPv4 and IPv6, at the top level for every host and in a host entry
+  for that host. A client address in `ip_allow` gets in without signing in, without `X-Gatekeeper-User`; one in
+  `ip_deny` gets `403` on every path - no sign-in page, no code mail, whatever its session - and `ip_deny` wins.
+  Both judge only the client address a trusted proxy names; `0.0.0.0/0` and `::/0` are refused in `ip_allow`
+
+### Changed
+
+- The README leaves the development commands to `AGENTS.md` and the branding block to `examples/config.json`, to stay
+  within the 25,000 bytes of Docker Hub
+
 ## [1.1.3] - 2026-11-13
 
 ### Security

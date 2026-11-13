@@ -39,9 +39,10 @@
     "report.example.com": ["reader@example.org", "@example.net"]
   },
   "hosts": {
-    "report.example.com": {"login": ["email", "zitadel"], "allow": ["report.example.com", "admins"]},
+    "report.example.com": {"login": ["email", "zitadel"], "allow": ["report.example.com", "admins"], "ip_allow": ["198.51.100.7", "2001:db8:42::/48"]},
     "staging.example.com": {"login": ["zitadel"], "allow": ["admins"], "session": "8h"}
   },
+  "ip_deny": ["192.0.2.0/24", "2001:db8:bad::/48"],
   "umami": {
     "url": "http://umami:3000/api/send",
     "website": "00000000-0000-0000-0000-000000000000",

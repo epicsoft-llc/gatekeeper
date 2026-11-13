@@ -23,13 +23,15 @@ func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
 	}
 	sess, ok := s.readSession(r, req)
 	switch {
-	case !ok:
-		w.WriteHeader(http.StatusUnauthorized)
-	case !s.permitted(req, sess):
-		w.WriteHeader(http.StatusForbidden)
-	default:
+	case ok && s.permitted(req, sess):
 		w.Header().Set("X-Gatekeeper-User", sess.Email)
 		w.WriteHeader(http.StatusAccepted)
+	case s.admitted(req):
+		w.WriteHeader(http.StatusAccepted)
+	case !ok:
+		w.WriteHeader(http.StatusUnauthorized)
+	default:
+		w.WriteHeader(http.StatusForbidden)
 	}
 }
 
@@ -42,13 +44,15 @@ func (s *Server) forwardAuth(w http.ResponseWriter, r *http.Request) {
 	}
 	sess, ok := s.readSession(r, req)
 	switch {
-	case !ok:
-		s.signInAtOrigin(w, r, req)
-	case !s.permitted(req, sess):
-		s.renderDenied(w, r, req, sess, sess.Email, i18n.Negotiate("", r.Header.Get("Accept-Language"), s.cfg.Language))
-	default:
+	case ok && s.permitted(req, sess):
 		w.Header().Set("X-Gatekeeper-User", sess.Email)
 		w.WriteHeader(http.StatusOK)
+	case s.admitted(req):
+		w.WriteHeader(http.StatusOK)
+	case !ok:
+		s.signInAtOrigin(w, r, req)
+	default:
+		s.renderDenied(w, r, req, sess, sess.Email, i18n.Negotiate("", r.Header.Get("Accept-Language"), s.cfg.Language))
 	}
 }
 

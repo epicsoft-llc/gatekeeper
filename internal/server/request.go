@@ -15,6 +15,8 @@ type request struct {
 	site    *config.Host
 	trusted bool
 	ip      string
+	// The client address for ip_allow and ip_deny; invalid when a trusted proxy named none.
+	addr netip.Addr
 	// IPv4 address or IPv6 /64, so one client cannot rotate through its own network.
 	client string
 	// IPv4 address or IPv6 /48: the network a flood of /64 clients would come from.
@@ -26,6 +28,7 @@ func (s *Server) resolve(r *http.Request) (*request, bool) {
 	peer, err := netip.ParseAddrPort(r.RemoteAddr)
 	addr := peer.Addr().Unmap()
 	trusted := err == nil && s.trustedPeer(addr)
+	known := err == nil && !trusted
 	host := r.Host
 	if trusted {
 		if forwarded := lastValue(r.Header.Values("X-Forwarded-Host")); forwarded != "" {
@@ -37,6 +40,7 @@ func (s *Server) resolve(r *http.Request) (*request, bool) {
 		}
 		if client, ok := s.clientAddress(r); ok {
 			addr = client
+			known = true
 		}
 	}
 	host = normalizeHost(host)
@@ -48,6 +52,9 @@ func (s *Server) resolve(r *http.Request) (*request, bool) {
 		return nil, false
 	}
 	req := &request{host: host, site: site, trusted: trusted, client: "unknown", network: "unknown"}
+	if known {
+		req.addr = addr.WithZone("")
+	}
 	if addr.IsValid() {
 		req.ip = addr.String()
 		req.client, req.network = addr.String(), addr.String()

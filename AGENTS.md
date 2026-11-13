@@ -55,7 +55,7 @@ internal/limit/     fixed-window rate limiter with a bounded number of keys; a f
 internal/i18n/      texts.json (de, en, ru, ka), Catalog with the overrides of a texts_file, language negotiation, minutes
 internal/mail/      code mail (text + HTML + inline logo), SMTP client, background queue (skips suppressed addresses);
                     templates/
-internal/server/    HTTP: request.go (host, client, return path), cookies.go (session, pending, flow, CSRF),
+internal/server/    HTTP: request.go (host, client, return path), networks.go (ip_allow, ip_deny), cookies.go (session, pending, flow, CSRF),
                     codes.go (pending codes, link tokens), handlers.go (auth, pages, email, code and link, sign-out),
                     oidc.go (providers), altcha.go (the ALTCHA step and its ticket), pages.go + templates/ (layout,
                     pages, style.css as a template of the colours), umami.go
@@ -71,6 +71,11 @@ docs/               screenshots/ of the README - take them anew when the pages c
   then either its address is in an allowed group (code by email, providers without `groups_claim`) or one of the
   provider groups kept in the session is in the host's `allow` (providers with `groups_claim`). A session alone
   never grants access.
+- **IP lists judge only a known client address**, top level and host together: `ip_deny` gets `403` on every path
+  before any handler (`refuseDenied`) - no sign-in page, no code mail, whatever the session; `ip_allow` lets in
+  without a session and without `X-Gatekeeper-User`, never an address in `ip_deny` (`config.AllowedIP`). A trusted
+  proxy that names no client address leaves both lists out, so the proxy is never judged as the client; `/0` is
+  refused in `ip_allow`.
 - **Every cookie goes through `seal`** with its own purpose and `purpose|host` as additional data, so a value opens
   only for the host it was issued for. Cookie names carry the `__Host-` prefix.
 - **Codes are kept only as HMAC**, bound to the pending cookie (browser) and the host, void after use, expiry or
@@ -137,6 +142,9 @@ Pipeline: `.gitlab-ci.yml`
 | `release` | tag `X.Y.Z` | fails without a `CHANGELOG.md` entry for the tag; images `X.Y.Z`, `X.Y`, `X`, `latest` |
 | `uploadReadme` | branch `main` | `README.md` as the description on Docker Hub, its relative image paths as GitLab URLs - fails above 25,000 bytes |
 | `github-release` | tag `X.Y.Z` | the GitHub release from the `CHANGELOG.md` entry, once the push mirror has brought the tag |
+
+Measure the README as `uploadReadme` does before a push:
+`sed 's#src="docs/#src="https://gitlab.com/epicsoft-networks/gatekeeper/-/raw/main/docs/#g' README.md | wc -c`.
 
 The image jobs run `scripts/publish.sh`: an amd64 build into the runner's Docker, `scripts/smoke.sh` starts it with a
 throwaway configuration (health, version, uid, `check`, CA bundle, the status codes of the endpoints), and only then
