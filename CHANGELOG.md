@@ -13,6 +13,19 @@ the versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 **A release is a git tag `X.Y.Z`.** CI builds `X.Y.Z`, `X.Y`, `X` and moves `latest`; the `release` job fails
 without an entry below for the tag.
 
+## [1.1.3] - 2026-11-13
+
+### Security
+
+- Go `1.27.4` (was `1.27.3`). It fixes GO-2026-6859 in `net/http`, a crash of the HTTP/1 server through a race on the
+  header of `MaxBytesReader` that `govulncheck` reports for the code paths of the gatekeeper, and security issues in
+  the go command, the compiler and the linker
+
+### Changed
+
+- `github.com/go-jose/go-jose/v4` `4.1.9` (was `4.1.8`) and `golang.org/x/oauth2` `0.38.0` (was `0.37.0`), bug fixes
+  without an advisory
+
 ## [1.1.2] - 2026-11-03
 
 ### Security

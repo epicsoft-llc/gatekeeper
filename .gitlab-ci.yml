@@ -10,7 +10,7 @@ variables:
 
 test:
   stage: test
-  image: golang:1.27.3
+  image: golang:1.27.4
   variables:
     GOPATH: "$CI_PROJECT_DIR/.go"
     GOFLAGS: "-mod=readonly"

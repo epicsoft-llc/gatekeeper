@@ -13,7 +13,7 @@ host.
 | **Repository** | `gitlab.com/epicsoft-networks/gatekeeper`, branch `develop` → `main`; mirrored to `github.com/epicsoft-llc/gatekeeper` by a GitLab push mirror |
 | **Image** | `epicsoft/gatekeeper` on Docker Hub and `registry.gitlab.com/epicsoft-networks/gatekeeper`, `linux/amd64` and `linux/arm64` |
 | **Version** | the git tag `X.Y.Z`, built in through `-ldflags -X main.version` |
-| **Runtime** | Go 1.27 (`golang:1.27.3-alpine` to build, `scratch` to run); locally pinned in `.vfox.toml` |
+| **Runtime** | Go 1.27 (`golang:1.27.4-alpine` to build, `scratch` to run); locally pinned in `.vfox.toml` |
 | **Dependencies** | `github.com/coreos/go-oidc/v3` (with `go-jose`) and `golang.org/x/oauth2` — nothing else |
 
 ## Rules
@@ -130,7 +130,7 @@ Pipeline: `.gitlab-ci.yml`
 
 | Job | Trigger | Action |
 |---|---|---|
-| `test` | every pipeline, also the weekly schedule | `gofmt`, `go vet`, `go test -race`, `staticcheck`, `govulncheck` in `golang:1.27.3` |
+| `test` | every pipeline, also the weekly schedule | `gofmt`, `go vet`, `go test -race`, `staticcheck`, `govulncheck` in `golang:1.27.4` |
 | `dependency-check` | branch `main` with the `ESN_DEPCHECK_*` group variables, also the weekly schedule | OWASP Dependency-Check of `go.mod` against the maintainers' central NVD database (image `owasp/dependency-check` with its MySQL driver, experimental Golang Mod Analyzer); fails from CVSS 5; suppressions in `dependency-suppressions.xml`, set only by a human |
 | `develop` | branch `develop` | image `:develop`, GitLab registry only |
 | `latest` | branch `main` | image `:latest` |
@@ -162,7 +162,8 @@ SameSite parameter). Running it in CI would need exclusions, and only a human se
 
 ## Updates
 
-- Go: `.vfox.toml`, `Dockerfile` and `.gitlab-ci.yml` together.
+- Go: `.vfox.toml`, `Dockerfile`, `.gitlab-ci.yml` and the `go` line of `go.mod` together - the last one keeps a
+  build on an older toolchain from passing for the fixed one.
 - Modules: `go get -u ./... && go mod tidy`, then the full test run; `govulncheck` in CI reports known
   vulnerabilities in the code paths actually used.
 - `staticcheck` and `govulncheck` are pinned in `.gitlab-ci.yml`.

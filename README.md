@@ -4,7 +4,7 @@ This Docker image is managed and kept up to date by [epicsoft LLC](https://epics
 
 A sign-in gate for websites behind a reverse proxy. Visitors sign in with a one-time code sent by email or with an OpenID Connect provider such as Zitadel; who may enter which host is one list of groups in the configuration. Pages and mails come in German, English, Russian and Georgian, in a neutral look or with the name, mark, logo, colours and texts of the configuration.
 
-* Base image: `scratch` — a static Go binary built with `golang:1.27.3-alpine`, platforms `linux/amd64` and `linux/arm64`
+* Base image: `scratch` — a static Go binary built with `golang:1.27.4-alpine`, platforms `linux/amd64` and `linux/arm64`
 * Dockerfile: https://gitlab.com/epicsoft-networks/gatekeeper/-/blob/main/Dockerfile
 * Repository: https://gitlab.com/epicsoft-networks/gatekeeper, mirrored to [GitHub](https://github.com/epicsoft-llc/gatekeeper) — issues are welcome on both; code changes only as merge requests on GitLab, the mirror cannot take pull requests
 * Container registry: https://gitlab.com/epicsoft-networks/gatekeeper/container_registry
