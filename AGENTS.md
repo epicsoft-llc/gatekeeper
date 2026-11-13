@@ -179,4 +179,5 @@ SameSite parameter). Running it in CI would need exclusions, and only a human se
 ## Release checklist
 
 - `CHANGELOG.md`: `## [X.Y.Z] - <date>` — the `release` job looks for exactly that heading
+- Tag only once the pipeline of that commit on `main` is green - never right after the push
 - Tag **without `v`**: `X.Y.Z`
